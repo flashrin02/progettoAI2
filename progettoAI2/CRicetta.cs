@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.ML.Data;
+﻿using Microsoft.ML.Data;
 
 namespace progettoAI2
 {
@@ -16,17 +11,18 @@ namespace progettoAI2
         public string link { get; set; }
         public string source { get; set; }
         public string ner { get; set; }
-        public bool? liked { get; set; }  //Campo opzionale (null se non ancora etichettata)
+        public bool liked { get; set; }
 
-        public CRicetta(int ID, string nome, List<string> ingredienti, List<string> istruzioni, string link, string source, string ner)
+        public CRicetta(int ID, string title, List<string> ingredients, List<string> directions, string link, string source, string ner)
         {
             this.ID = ID;
-            title = nome;
-            ingredients = ingredienti;
-            directions = istruzioni;
+            this.title = title;
+            this.ingredients = ingredients;
+            this.directions = directions;
             this.link = link;
             this.source = source;
             this.ner = ner;
+            liked = false;
         }
     }
 
@@ -40,15 +36,25 @@ namespace progettoAI2
         public float[] IngredientiVector { get; set; }
 
         public bool Label { get; set; }
+
+        public RicettaInput() { }
+
+        public RicettaInput(float numeroIngredienti, float numeroPassaggi, float[] ingredientiVector, bool label)
+        {
+            NumeroIngredienti = numeroIngredienti;
+            NumeroPassaggi = numeroPassaggi;
+            IngredientiVector = ingredientiVector;
+            Label = label;
+        }
     }
 
     public class RicettaPrediction
     {
         //Per mappare la colonna di output
         [ColumnName("PredictedLabel")]
-        public bool PredictedLabel;
+        public bool predictedLabel;
 
-        public float Probability;
-        public float Score;
+        public float probability;
+        public float score;
     }
 }
