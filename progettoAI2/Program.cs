@@ -140,6 +140,9 @@ class Program
 
             Console.WriteLine("Modello aggiornato con il nuovo dato");
 
+            ValutaModello(mlContext, model, trainingSet);
+
+
             SalvaPreferenze();
         }
     }
@@ -151,8 +154,8 @@ class Program
 
     static void CaricaRicette()
     {
-        string path = "full_dataset.csv";
-        ricette.Clear();
+        string path = "full_dataset_test.csv";
+        ricette.Clear();//perchè fai clear ogni volta??? -alessio
 
         if (File.Exists(path))
         {
@@ -172,10 +175,10 @@ class Program
                         List<string> directions = JsonSerializer.Deserialize<List<string>>(csv.GetField<string>(3));
                         string link = csv.GetField<string>(4);
                         string source = csv.GetField<string>(5);
-                        string ner = csv.GetField<string>(6);
+                        List<string> ner = JsonSerializer.Deserialize<List<string>>(csv.GetField<string>(6));
 
                         if (string.IsNullOrEmpty(title) || ingredients.Count == 0 || directions.Count == 0 ||
-                            string.IsNullOrEmpty(link) || string.IsNullOrEmpty(source) || string.IsNullOrEmpty(ner))
+                            string.IsNullOrEmpty(link) || string.IsNullOrEmpty(source) || ner.Count == 0)
                         {
                             Console.WriteLine($"Ricetta con ID {ID} ignorata (dati mancanti)");
                             continue;
@@ -203,7 +206,7 @@ class Program
 
         foreach (var r in ricette)
         {
-            foreach (var ing in r.ingredients)
+            foreach (var ing in r.ner)
             {
                 string ingrediente = ing.Trim().ToLower();
                 if (!tuttiIngredienti.Contains(ingrediente))
@@ -249,7 +252,7 @@ class Program
         {
             bool trovato = false;
 
-            foreach (string ing in r.ingredients)
+            foreach (string ing in r.ner)
             {
                 if (ing.Trim().ToLower() == voc[i])
                 {
@@ -296,4 +299,39 @@ class Program
         File.WriteAllText("preferences.json", json);
         Console.WriteLine("Preferenze salvate");
     }
+
+    static void ValutaModello(MLContext mlContext, ITransformer model, List<RicettaInput> dati)
+    {
+        if (dati.Count < 2)
+        {
+            Console.WriteLine("Non ci sono abbastanza dati per una valutazione");
+            return;
+        }
+
+        var dataView = mlContext.Data.LoadFromEnumerable(dati);
+        var split = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.3); // 30% test set
+
+        // Controlla che ci sia almeno una classe positiva e una negativa nel test set
+        var testSet = mlContext.Data.CreateEnumerable<RicettaInput>(split.TestSet, reuseRowObject: false).ToList();
+        bool hasPositive = testSet.Any(x => x.Label);
+        bool hasNegative = testSet.Any(x => !x.Label);
+
+        if (!hasPositive || !hasNegative)
+        {
+            Console.WriteLine("Il set di test non contiene sia esempi positivi che negativi. Valutazione saltata.");
+            return;
+        }
+
+        var predictions = model.Transform(split.TestSet);
+
+        var metrics = mlContext.BinaryClassification.Evaluate(predictions, labelColumnName: "Label");
+
+        Console.WriteLine("=== Metriche del modello ===");
+        Console.WriteLine($"Accuracy: {metrics.Accuracy:P2}");
+        Console.WriteLine($"Precision: {metrics.PositivePrecision:P2}");
+        Console.WriteLine($"Recall: {metrics.PositiveRecall:P2}");
+        Console.WriteLine($"F1 Score: {metrics.F1Score:P2}");
+        Console.WriteLine("============================");
+    }
+
 }

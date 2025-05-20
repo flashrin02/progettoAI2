@@ -4,16 +4,18 @@ namespace progettoAI2
 {
     public class CRicetta
     {
+        private List<string> ner1;
+
         public int ID { get; set; }
         public string title { get; set; }
         public List<string> ingredients { get; set; }
         public List<string> directions { get; set; }
         public string link { get; set; }
         public string source { get; set; }
-        public string ner { get; set; }
+        public List<string> ner { get; set; }
         public bool liked { get; set; }
 
-        public CRicetta(int ID, string title, List<string> ingredients, List<string> directions, string link, string source, string ner)
+        public CRicetta(int ID, string title, List<string> ingredients, List<string> directions, string link, string source, List<string> ner)
         {
             this.ID = ID;
             this.title = title;
@@ -24,6 +26,7 @@ namespace progettoAI2
             this.ner = ner;
             liked = false;
         }
+
     }
 
     public class RicettaInput
